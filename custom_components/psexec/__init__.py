@@ -1,8 +1,8 @@
-from homeassistant import core
 import logging
 import ast
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
+from homeassistant import core
 
 from .const import (
     DOMAIN,
@@ -18,33 +18,31 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup(hass: core.HomeAssistant, config: dict) -> bool:
-    """Set up the PSExec API component."""
-    def _exec(service):
-        import uuid
+def setup(hass: core.HomeAssistant, config: dict) -> bool:
+    def _exec(call):
         from custom_components.psexec.PSExecAPI import PSExecAPI
 
-        host = service.data.get('host')
-        username = service.data.get('username')
-        password = service.data.get('password')
-        command = service.data.get('command')
+        host = call.data.get(CONF_HOST)
+        username = call.data.get(CONF_USERNAME)
+        password = call.data.get(CONF_PASSWORD)
+        command = call.data.get(CONF_COMMAND)
         if not all((host, username, password, command)):
             _LOGGER.error("Cannot psexec without host, username, password, command")
             return False
 
-        interactive = service.data.get('interactive', False)
-        kwargs = service.data.get('kwargs', {})
+        interactive = call.data.get(CONF_INTERACTIVE, False)
+        kwargs = call.data.get(CONF_KWARGS, {})
         if isinstance(kwargs, str):
             kwargs = ast.literal_eval(kwargs)
 
         _LOGGER.debug(f"""psexec:
-    host: {host}
-    username: {username}
-    password: {password}
-    command: {command}
-    interactive: {interactive}
-    kwargs: {type(kwargs)}
-    {kwargs}""")
+host: {host}
+username: {username}
+password: {password}
+command: {command}
+interactive: {interactive}
+kwargs: {type(kwargs)}
+{kwargs}""")
 
         psexecapi = PSExecAPI.get(host, username, password)
 
@@ -55,11 +53,6 @@ async def async_setup(hass: core.HomeAssistant, config: dict) -> bool:
         finally:
             psexecapi._destroy()
 
-    hass.services.register(DOMAIN, 'exec', _exec)
-    hass.services.async_register(
-        DOMAIN,
-        'exec',
-        _exec,
-        schema=COMPONENT_CONFIG_PSEXEC_CONNECTION,
-    )
+    hass.services.register(DOMAIN, 'exec', _exec, COMPONENT_CONFIG_PSEXEC_CONNECTION)
     return True
+
