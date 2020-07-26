@@ -1,0 +1,12 @@
+{
+  "domain": "psexec",
+  "documentation": "https://docs_url.com",
+  "issue_tracker": "https://docs_url.com",
+  "codeowners": ["@alertua"],
+  "name": "PSExec API",
+  "config_flow": false,
+  "dependencies": [],
+  "requirements": [
+    "pypsexec"
+  ]
+}
