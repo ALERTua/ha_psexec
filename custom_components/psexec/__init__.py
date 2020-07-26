@@ -79,5 +79,6 @@ kwargs:
         finally:
             psexecapi._destroy()
 
-    hass.services.register(DOMAIN, 'exec', _exec, COMPONENT_CONFIG_PSEXEC_CONNECTION)
+    hass.services.register(DOMAIN, 'exec', _exec)
+    # hass.services.register(DOMAIN, 'exec', _exec, COMPONENT_CONFIG_PSEXEC_CONNECTION)
     return True
