@@ -1,7 +1,5 @@
 import logging
-import ast
-import voluptuous as vol
-import homeassistant.helpers.config_validation as cv
+
 from homeassistant import core
 
 from .const import (
@@ -11,9 +9,33 @@ from .const import (
     CONF_PASSWORD,
     CONF_COMMAND,
     CONF_INTERACTIVE,
-    CONF_KWARGS,
+    CONF_ASYNCHRONOUS,
+    CONF_LOAD_PROFILE,
+    CONF_INTERACTIVE_SESSION,
+    CONF_RUN_ELEVATED,
+    CONF_RUN_LIMITED,
+    CONF_USE_SYSTEM_ACCOUNT,
+    CONF_WORKING_DIR,
+    CONF_SHOW_UI_ON_WIN_LOGON,
+    CONF_PRIORITY,
+    CONF_REMOTE_LOG_PATH,
+    CONF_TIMEOUT_SECONDS,
     COMPONENT_CONFIG_PSEXEC_CONNECTION,
 )
+
+consts = [
+    CONF_ASYNCHRONOUS,
+    CONF_LOAD_PROFILE,
+    CONF_INTERACTIVE_SESSION,
+    CONF_RUN_ELEVATED,
+    CONF_RUN_LIMITED,
+    CONF_USE_SYSTEM_ACCOUNT,
+    CONF_WORKING_DIR,
+    CONF_SHOW_UI_ON_WIN_LOGON,
+    CONF_PRIORITY,
+    CONF_REMOTE_LOG_PATH,
+    CONF_TIMEOUT_SECONDS,
+]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,14 +48,18 @@ def setup(hass: core.HomeAssistant, config: dict) -> bool:
         username = call.data.get(CONF_USERNAME)
         password = call.data.get(CONF_PASSWORD)
         command = call.data.get(CONF_COMMAND)
-        if not all((host, username, password, command)):
+        if all((host, username, password, command)):
+            pass
+        else:
             _LOGGER.error("Cannot psexec without host, username, password, command")
             return False
 
         interactive = call.data.get(CONF_INTERACTIVE, False)
-        kwargs = call.data.get(CONF_KWARGS, {})
-        if isinstance(kwargs, str):
-            kwargs = ast.literal_eval(kwargs)
+        kwargs = {}
+        for c in consts:
+            val = call.data.get(c)
+            if val is not None:
+                kwargs.update({c: val})
 
         _LOGGER.debug(f"""psexec:
 host: {host}
@@ -41,13 +67,13 @@ username: {username}
 password: {password}
 command: {command}
 interactive: {interactive}
-kwargs: {type(kwargs)}
+kwargs:
 {kwargs}""")
 
         psexecapi = PSExecAPI.get(host, username, password)
 
         try:
-            psexecapi.run_cmd(command, interactive, **kwargs)
+            psexecapi.run_cmd(cmd=command, interactively=interactive, **kwargs)
         except:
             _LOGGER.exception(f"psexec failed on host {host}:")
         finally:
@@ -55,4 +81,3 @@ kwargs: {type(kwargs)}
 
     hass.services.register(DOMAIN, 'exec', _exec, COMPONENT_CONFIG_PSEXEC_CONNECTION)
     return True
-
