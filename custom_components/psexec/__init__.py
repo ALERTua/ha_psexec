@@ -68,7 +68,7 @@ password: {password}
 command: {command}
 interactive: {interactive}
 kwargs:
-{kwargs}""")
+{str(kwargs)}""")
 
         psexecapi = PSExecAPI.get(host, username, password)
 
