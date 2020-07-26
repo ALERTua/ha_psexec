@@ -1,29 +1,24 @@
 import logging
 
 from homeassistant import core
+from homeassistant.const import CONF_HOST, CONF_USERNAME, CONF_PASSWORD, CONF_COMMAND
 
-from .const import (
-    DOMAIN,
-    CONF_HOST,
-    CONF_USERNAME,
-    CONF_PASSWORD,
-    CONF_COMMAND,
-    CONF_INTERACTIVE,
-    CONF_ASYNCHRONOUS,
-    CONF_LOAD_PROFILE,
-    CONF_INTERACTIVE_SESSION,
-    CONF_RUN_ELEVATED,
-    CONF_RUN_LIMITED,
-    CONF_USE_SYSTEM_ACCOUNT,
-    CONF_WORKING_DIR,
-    CONF_SHOW_UI_ON_WIN_LOGON,
-    CONF_PRIORITY,
-    CONF_REMOTE_LOG_PATH,
-    CONF_TIMEOUT_SECONDS,
-    COMPONENT_CONFIG_PSEXEC_CONNECTION,
-)
+DOMAIN = "psexec"
 
-consts = [
+CONF_ASYNCHRONOUS = 'asynchronous'
+CONF_LOAD_PROFILE = 'load_profile'
+CONF_INTERACTIVE_SESSION = 'interactive_session'
+CONF_INTERACTIVE = 'interactive'
+CONF_RUN_ELEVATED = 'run_elevated'
+CONF_RUN_LIMITED = 'run_limited'
+CONF_USE_SYSTEM_ACCOUNT = 'use_system_account'
+CONF_WORKING_DIR = 'working_dir'
+CONF_SHOW_UI_ON_WIN_LOGON = 'show_ui_on_win_logon'
+CONF_PRIORITY = 'priority'
+CONF_REMOTE_LOG_PATH = 'remote_log_path'
+CONF_TIMEOUT_SECONDS = 'timeout_seconds'
+
+optionals = [
     CONF_ASYNCHRONOUS,
     CONF_LOAD_PROFILE,
     CONF_INTERACTIVE_SESSION,
@@ -54,9 +49,9 @@ def setup(hass: core.HomeAssistant, config: dict) -> bool:
             _LOGGER.error("Cannot psexec without host, username, password, command")
             return False
 
-        interactive = call.data.get(CONF_INTERACTIVE, False)
+        interactive = call.data.get(CONF_INTERACTIVE, True)
         kwargs = {}
-        for c in consts:
+        for c in optionals:
             val = call.data.get(c)
             if val is not None:
                 kwargs.update({c: val})
@@ -68,7 +63,7 @@ password: {password}
 command: {command}
 interactive: {interactive}
 kwargs:
-{str(kwargs)}""")
+{kwargs}""")
 
         psexecapi = PSExecAPI.get(host, username, password)
 
@@ -80,5 +75,4 @@ kwargs:
             psexecapi._destroy()
 
     hass.services.register(DOMAIN, 'exec', _exec)
-    # hass.services.register(DOMAIN, 'exec', _exec, COMPONENT_CONFIG_PSEXEC_CONNECTION)
     return True
