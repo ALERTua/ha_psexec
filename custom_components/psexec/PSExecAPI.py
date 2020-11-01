@@ -5,6 +5,7 @@ import logging
 from typing import Dict
 
 from pypsexec.client import Client
+from pypsexec.exceptions import SCMRException
 from smbprotocol.exceptions import SMBAuthenticationError
 
 _LOGGER = logging.getLogger(__name__)
@@ -72,8 +73,10 @@ class PSExecAPI(object):
                 _LOGGER.error("%s Authentication Error: %s %s" % (__name__, type(e), e))
                 self._destroy()
                 return
+            except SCMRException as e:
+                _LOGGER.error("%s SCMRException Exception: %s %s" % (__name__, type(e), e))
             except Exception as e:
-                _LOGGER.error("%s error: %s %s" % (__name__, type(e), e))
+                _LOGGER.error("%s Exception: %s %s" % (__name__, type(e), e))
                 self._destroy()
                 return
 
