@@ -1,12 +1,11 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 import atexit
-import os
+import logging
+from typing import Dict
 
 from pypsexec.client import Client
 from smbprotocol.exceptions import SMBAuthenticationError
-from typing import Dict
-import logging
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -112,7 +111,8 @@ class PSExecAPI(object):
         _LOGGER.debug("Running remote executable @ {s.username}@{s.hostname}: {exe} {kw}".format(
             s=self, exe=executable, kw=kwargs if kwargs else ''))
         if not self._client:
-            _LOGGER.warning("Cannot run executable: connection not established @ %s@%s" % (self.username, self.hostname))
+            _LOGGER.warning(
+                "Cannot run executable: connection not established @ %s@%s" % (self.username, self.hostname))
             return
 
         _LOGGER.info("Running executable %s" % executable)
@@ -164,12 +164,14 @@ class PSExecAPI(object):
 
         brokers_split = str(stdout).strip().split('\n')
         if not brokers_split:
-            _LOGGER.warning("Couldn't get Session ID for %s@%s. Brokers list empty?\n%s" % (user, self.hostname, stdout))
+            _LOGGER.warning(
+                "Couldn't get Session ID for %s@%s. Brokers list empty?\n%s" % (user, self.hostname, stdout))
             return
 
         broker = brokers_split[0].split()
         if len(broker) < 3:
-            _LOGGER.warning("Couldn't get Session ID for %s@%s. Broker split empty?\n%s" % (user, self.hostname, broker))
+            _LOGGER.warning(
+                "Couldn't get Session ID for %s@%s. Broker split empty?\n%s" % (user, self.hostname, broker))
             return
 
         session_id = broker[3]
@@ -238,64 +240,9 @@ class PSExecAPI(object):
 
 
 def main():
-    _LOGGER.verbose = True
-    psw = os.getenv('JIRAPASSWORD')
-
-    for ip in ('10.135.10.21',):
-        ps = PSExecAPI.get(ip, 'CORP\\hpa.a_rubashev', psw)
-        if not ps.session_established:
-            log.error("%s failed to establish session" % ip)
-            continue
-
-        interactive_session_id = ps.get_session_id('a_rubashev')
-
-        remote_tool_path = 'c:\\tools\\wotdevtool'
-        launcher_path = 'c:\\tools\\wotdevtool\\LAUNCHER.cmd'
-        software_installer = '%s\\runners\\software_install.cmd' % remote_tool_path
-        tool_branch = 'develop'
-        launcher_url = 'https://stash.wargaming.net/projects/WOTNUX/repos/wotnux_tools_py/raw/' \
-                       'LAUNCHER.cmd?at=refs%2Fheads%2F{0}'.format(tool_branch)
-        stdout, stderr, return_code = ps.run_cmd("if not exist {tool_path} mkdir {tool_path}".format(
-            tool_path=remote_tool_path))
-
-        stdout, stderr, return_code = ps.run_interactively(
-            'powershell', '-Command "Invoke-WebRequest "{url}" -OutFile "{launcher}"; '
-                          '(Get-Content "{launcher}") | Set-Content -Force "{launcher}" "'.format(
-                launcher=launcher_path, url=launcher_url), session_id=interactive_session_id)
-
-        stdout, stderr, return_code = ps.run_cmd(
-            "set tool_branch={branch} & set wottool_nopause=1 & set wottool_install_only=1 & set verbose=1 & "
-            "call {launcher}".format(launcher=launcher_path, branch=tool_branch),
-            interactively=True, session_id=interactive_session_id)
-
-        stdout, stderr, return_code = ps.run_cmd(
-            "set verbose=1 & call {software_installer}".format(software_installer=software_installer),
-            interactively=True, session_id=interactive_session_id)
-
-        stdout, stderr, return_code = ps.run_cmd("netsh advfirewall set PrivateProfile state off", interactively=True,
-                                                 session_id=interactive_session_id)
-        stdout, stderr, return_code = ps.run_cmd("netsh advfirewall set DomainProfile state off", interactively=True,
-                                                 session_id=interactive_session_id)
-        stdout, stderr, return_code = ps.run_cmd("cup chocolatey", interactively=True,
-                                                 session_id=interactive_session_id)
-
-        choco_packages = ['jetbrainstoolbox', '7zip', 'chocolatey-core.extension', 'chocolatey-dotnetfx.extension',
-                          'chocolatey-windowsupdate.extension', 'chocolateygui', 'Cmder', 'curl', 'linkshellextension',
-                          'lockhunter', 'microsoft-windows-terminal', 'nircmd', 'PowerShell', 'processhacker',
-                          'powertoys', 'procexp', 'procmon', 'windbg', 'windirstat', 'winscp', 'geforce-experience',
-                          'notepadplusplus', 'directx']
-        cmd = "cinst %s" % ' '.join(choco_packages)
-        stdout, stderr, return_code = ps.run_cmd(cmd, interactively=True, session_id=interactive_session_id)
-
-    session_id = ps._client.session.session_id
-    choco = ps.check_file_exists('choco.exe')
-    ps.create_shortcut("c:\\windows\\system32\\calc.exe", title='Calc')
-    ps.mirror_folder("\\\\VBOXSVR\\Inbox\\AIDA64", "c:\\tools\\AIDA64")
-    ps.mirror_folder("\\\\VBOXSVR\\Inbox\\click", "c:\\tools\\click", asynchronous=True)
     pass
 
 
 if __name__ == '__main__':
-    log.verbose = True
     main()
     print("")
