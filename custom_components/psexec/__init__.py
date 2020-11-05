@@ -65,8 +65,7 @@ interactive: {interactive}
 kwargs:
 {kwargs}""")
 
-        # psexecapi = PSExecAPI.get(host, username, password)
-        psexecapi = PSExecAPI(host, username, password)
+        psexecapi = PSExecAPI.get(host, username, password)
 
         try:
             psexecapi.run_cmd(cmd=command, interactively=interactive, **kwargs)

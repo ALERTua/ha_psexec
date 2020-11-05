@@ -4,7 +4,7 @@ import atexit
 import logging
 from typing import Dict
 
-from pypsexec.client import Client
+from pypsexec.client import Client  # https://github.com/jborean93/pypsexec
 from pypsexec.exceptions import SCMRException
 from smbprotocol.exceptions import SMBAuthenticationError
 
@@ -68,6 +68,13 @@ class PSExecAPI(object):
             # Remote Host Requirements: https://github.com/jborean93/pypsexec#remote-host-requirements
             try:
                 self.__client.connect(timeout=self.timeout)
+                self.__client.cleanup()
+                self.__client.disconnect()
+            except:
+                pass
+
+            try:
+                self.__client.connect(timeout=self.timeout)
                 self.__client.create_service()
             except SMBAuthenticationError as e:
                 _LOGGER.error("%s Authentication Error: %s %s" % (__name__, type(e), e))
@@ -89,16 +96,18 @@ class PSExecAPI(object):
         self.__client = None
         PSExecAPI._remove_class_cache(self)
 
+    def _cleanup(self):
+        try:
+            self.__client.cleanup()
+        except:
+            pass
+
     def _disconnect(self):
         if not self.__client:
             return
 
-        try:
-            self.__client.remove_service()
-            self.__client.disconnect()
-            self.__client.cleanup()
-        except:
-            pass
+        self.__client.remove_service()
+        self.__client.disconnect()
 
     def _register_at_exit(self):
         atexit.register(self._disconnect)
@@ -200,12 +209,12 @@ class PSExecAPI(object):
         return self._session_id
 
     def check_file_exists(self, file_path):
-        stdout, stderr, return_code = self.run_executable('cmd.exe', arguments='/c where %s' % file_path)
+        stdout, stderr, return_code = self.run_executable('cmd.exe', arguments='/c where "%s"' % file_path)
         if stderr is None or stderr.strip() or stdout is None or not stdout.strip():
             _LOGGER.warning("Couldn't check_file_exists %s " % file_path)
             return
 
-        if "Could not find files for the given pattern" in stdout:
+        if "Could not find files for the given pattern" in str(stdout):
             return False
 
         return stdout.strip()
@@ -243,6 +252,11 @@ class PSExecAPI(object):
 
 
 def main():
+    psexec = PSExecAPI.get('192.168.1.2', 'alexe', 'tGCqif9!')
+    exists = psexec.check_file_exists('explorer.exe')
+    ex = psexec.run_cmd('nircmd.exe speak text "text" 0 50')
+    psexec.run_cmd('nircmd.exe speak text "text" 0 50')
+    psexec.run_cmd('nircmd.exe speak text "text" 0 50')
     pass
 
 
