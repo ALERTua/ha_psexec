@@ -66,12 +66,12 @@ class PSExecAPI(object):
             _LOGGER.info('Establishing PSExec connection with %s@%s with timeout %s seconds ... ' % (
                 self.username, self.hostname, self.timeout))
             # Remote Host Requirements: https://github.com/jborean93/pypsexec#remote-host-requirements
-            try:
-                self.__client.connect(timeout=self.timeout)
-                self.__client.cleanup()
-                self.__client.disconnect()
-            except:
-                pass
+            # try:
+            #     self.__client.connect(timeout=self.timeout)
+            #     self.__client.cleanup()
+            #     self.__client.disconnect()
+            # except:
+            #     pass
 
             try:
                 self.__client.connect(timeout=self.timeout)
@@ -106,8 +106,11 @@ class PSExecAPI(object):
         if not self.__client:
             return
 
-        self.__client.remove_service()
-        self.__client.disconnect()
+        try:
+            self.__client.remove_service()
+            self.__client.disconnect()
+        except:
+            pass
 
     def _register_at_exit(self):
         atexit.register(self._disconnect)
@@ -209,7 +212,11 @@ class PSExecAPI(object):
         return self._session_id
 
     def check_file_exists(self, file_path):
-        stdout, stderr, return_code = self.run_executable('cmd.exe', arguments='/c where "%s"' % file_path)
+        output = self.run_executable('cmd.exe', arguments='/c where "%s"' % file_path)
+        if output is None:
+            return
+
+        stdout, stderr, return_code = output
         if stderr is None or stderr.strip() or stdout is None or not stdout.strip():
             _LOGGER.warning("Couldn't check_file_exists %s " % file_path)
             return
@@ -254,7 +261,7 @@ class PSExecAPI(object):
 def main():
     psexec = PSExecAPI.get('192.168.1.2', 'alexe', 'tGCqif9!')
     exists = psexec.check_file_exists('explorer.exe')
-    ex = psexec.run_cmd('nircmd.exe speak text "text" 0 50')
+    ex = psexec.run_cmd('nircmd speak text "blabla"', interactively=True)
     psexec.run_cmd('nircmd.exe speak text "text" 0 50')
     psexec.run_cmd('nircmd.exe speak text "text" 0 50')
     pass
