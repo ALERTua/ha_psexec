@@ -50,7 +50,6 @@ def setup(hass: core.HomeAssistant, config: dict) -> bool:
             return False
 
         interactive = call.data.get(CONF_INTERACTIVE, True)
-        use_system_account = call.data.get(CONF_USE_SYSTEM_ACCOUNT, True)
         kwargs = {}
         for c in optionals:
             val = call.data.get(c)
@@ -63,14 +62,13 @@ username: {username}
 password: {password}
 command: {command}
 interactive: {interactive}
-use_system_account: {use_system_account}
 kwargs:
 {kwargs}""")
 
         psexecapi = PSExecAPI.get(host, username, password)
 
         try:
-            psexecapi.run_cmd(cmd=command, interactively=interactive, use_system_account=use_system_account, **kwargs)
+            psexecapi.run_cmd(cmd=command, interactively=interactive, **kwargs)
         except:
             _LOGGER.exception(f"psexec failed on host {host}:")
         finally:

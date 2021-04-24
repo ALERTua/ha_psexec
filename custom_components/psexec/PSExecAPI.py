@@ -115,10 +115,10 @@ class PSExecAPI(object):
     def _register_at_exit(self):
         atexit.register(self._disconnect)
 
-    def run_cmd(self, cmd, interactively=False, asynchronous=False, session_id=None, use_system_account=True, **kwargs):
+    def run_cmd(self, cmd, interactively=False, asynchronous=False, session_id=None, **kwargs):
         if interactively:
             return self.run_interactively('cmd', arguments='/c "%s"' % cmd, asynchronous=asynchronous,
-                                          session_id=session_id, use_system_account=use_system_account, **kwargs)
+                                          session_id=session_id, **kwargs)
 
         return self.run_executable('cmd', arguments='/c "%s"' % cmd, interactive_session=session_id, **kwargs)
 
@@ -137,15 +137,16 @@ class PSExecAPI(object):
         _LOGGER.debug("%s%sReturn Code: %s" % (_stderr_str, _stdout_str, return_code))
         return stdout, stderr, return_code
 
-    def run_interactively(self, executable, arguments=None, asynchronous=False, session_id=None,
-                          use_system_account=True, **kwargs):
+    def run_interactively(self, executable, arguments=None, asynchronous=False, session_id=None, **kwargs):
         session_id = session_id or self.session_id
         if not session_id:
             _LOGGER.warning("Cannot run %s interactively: User not logged in" % executable)
             return
 
-        kwargs.update({'interactive': True, 'interactive_session': session_id, 'use_system_account': use_system_account,
-                       'asynchronous': asynchronous})
+        kwargs.update({'interactive': True, 'interactive_session': session_id, 'asynchronous': asynchronous})
+        if 'use_system_account' not in kwargs:
+            kwargs.update({'use_system_account': True})
+
         _LOGGER.info("Running %s interactively" % executable)
         return self.run_executable(executable, arguments=arguments, **kwargs)
 
