@@ -1,5 +1,6 @@
 {
   "domain": "psexec",
+  "version": "1.0.0",
   "documentation": "https://docs_url.com",
   "issue_tracker": "https://docs_url.com",
   "codeowners": ["@alertua"],
