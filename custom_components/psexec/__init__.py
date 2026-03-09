@@ -1,7 +1,7 @@
 import logging
 
 from homeassistant import core
-from homeassistant.const import CONF_HOST, CONF_USERNAME, CONF_PASSWORD, CONF_COMMAND
+from homeassistant.const import CONF_COMMAND, CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 
 DOMAIN = "psexec"
 
