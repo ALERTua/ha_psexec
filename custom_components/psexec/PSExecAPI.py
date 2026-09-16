@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-# -*- coding: utf-8 -*-
 import atexit
 import logging
 from typing import Dict
@@ -11,7 +10,7 @@ from smbprotocol.exceptions import SMBAuthenticationError
 _LOGGER = logging.getLogger(__name__)
 
 
-class PSExecAPI(object):
+class PSExecAPI:
     _cache = {}  # type: Dict[PSExecAPI]
 
     def __init__(self, hostname, username, password):
@@ -24,7 +23,7 @@ class PSExecAPI(object):
         self._register_at_exit()
 
     def __str__(self):
-        return "%s%s:%s@%s" % (__name__, self.username, self.password, self.hostname)
+        return "{}{}:{}@{}".format(__name__, self.username, self.password, self.hostname)
 
     @property
     def session_established(self):
@@ -63,7 +62,7 @@ class PSExecAPI(object):
         # type: () -> Client or None
         if self.__client is None:
             self.__client = Client(self.hostname, self.username, self.password)
-            _LOGGER.info('Establishing PSExec connection with %s@%s with timeout %s seconds ... ' % (
+            _LOGGER.info('Establishing PSExec connection with {}@{} with timeout {} seconds ... '.format(
                 self.username, self.hostname, self.timeout))
             # Remote Host Requirements: https://github.com/jborean93/pypsexec#remote-host-requirements
             # try:
@@ -77,13 +76,13 @@ class PSExecAPI(object):
                 self.__client.connect(timeout=self.timeout)
                 self.__client.create_service()
             except SMBAuthenticationError as e:
-                _LOGGER.error("%s Authentication Error: %s %s" % (__name__, type(e), e))
+                _LOGGER.error("{} Authentication Error: {} {}".format(__name__, type(e), e))
                 self._destroy()
                 return
             except SCMRException as e:
-                _LOGGER.error("%s SCMRException Exception: %s %s" % (__name__, type(e), e))
+                _LOGGER.error("{} SCMRException Exception: {} {}".format(__name__, type(e), e))
             except Exception as e:
-                _LOGGER.error("%s Exception: %s %s" % (__name__, type(e), e))
+                _LOGGER.error("{} Exception: {} {}".format(__name__, type(e), e))
                 self._destroy()
                 return
 
@@ -127,14 +126,14 @@ class PSExecAPI(object):
             s=self, exe=executable, kw=kwargs if kwargs else ''))
         if not self._client:
             _LOGGER.warning(
-                "Cannot run executable: connection not established @ %s@%s" % (self.username, self.hostname))
+                "Cannot run executable: connection not established @ {}@{}".format(self.username, self.hostname))
             return
 
         _LOGGER.info("Running executable %s" % executable)
         stdout, stderr, return_code = self._client.run_executable(executable, **kwargs)
         _stderr_str = 'Stderr:\n%s\n\n' % stderr.strip() if stderr and stderr.strip() else ''
         _stdout_str = 'Stdout:\n%s\n\n' % stdout.strip() if stdout and stdout.strip() else ''
-        _LOGGER.debug("%s%sReturn Code: %s" % (_stderr_str, _stdout_str, return_code))
+        _LOGGER.debug("{}{}Return Code: {}".format(_stderr_str, _stdout_str, return_code))
         return stdout, stderr, return_code
 
     def run_interactively(self, executable, arguments=None, asynchronous=False, session_id=None, **kwargs):
@@ -152,43 +151,43 @@ class PSExecAPI(object):
 
     def mirror_folder(self, remote_folder, local_folder, multi_thread=True, **kwargs):
         _multi_thread = '/MT' if multi_thread else ''
-        _args = '"%s" "%s" /UNICODE /MIR %s' % (remote_folder, local_folder, _multi_thread)
+        _args = '"{}" "{}" /UNICODE /MIR {}'.format(remote_folder, local_folder, _multi_thread)
         kwargs.update({'arguments': _args})
-        _LOGGER.info("Mirroring folders %s and %s" % (remote_folder, local_folder))
+        _LOGGER.info("Mirroring folders {} and {}".format(remote_folder, local_folder))
         output = self.run_executable('robocopy.exe', **kwargs)
         stdout, stderr, return_code = output if output else (None, None, None)
         return stdout, stderr, return_code
 
     def get_session_id(self, user=None):
         user = user or self.username
-        _LOGGER.debug("Getting session ID for %s@%s" % (user, self.hostname))
+        _LOGGER.debug("Getting session ID for {}@{}".format(user, self.hostname))
         _args = '/c tasklist /NH /FI "USERNAME eq %s" /FI "IMAGENAME eq RuntimeBroker.exe"' % user
         stdout, stderr, return_code = self._client.run_executable('cmd', arguments=_args, use_system_account=False)
         _LOGGER.debug("Get Session ID STDOUT: %s" % stdout)
         _LOGGER.debug("Get Session ID STDERR: %s" % stderr)
         _LOGGER.debug("Get Session ID return_code: %s" % return_code)
         if stderr and str(stderr).strip():
-            _LOGGER.warning("Error getting session ID for %s@%s. User is not logged in?" % (user, self.hostname))
+            _LOGGER.warning("Error getting session ID for {}@{}. User is not logged in?".format(user, self.hostname))
             return
 
         if stdout and "INFO: No tasks are running which match the specified criteria." in str(stdout).strip():
-            _LOGGER.warning("Couldn't get Session ID for %s@%s. User is not logged in" % (user, self.hostname))
+            _LOGGER.warning("Couldn't get Session ID for {}@{}. User is not logged in".format(user, self.hostname))
             return
 
         if not stdout or not str(stdout).strip():
-            _LOGGER.warning("Couldn't get Session ID for %s@%s. Stdout empty?\n%s" % (user, self.hostname, stdout))
+            _LOGGER.warning("Couldn't get Session ID for {}@{}. Stdout empty?\n{}".format(user, self.hostname, stdout))
             return
 
         brokers_split = str(stdout).strip().split('\n')
         if not brokers_split:
             _LOGGER.warning(
-                "Couldn't get Session ID for %s@%s. Brokers list empty?\n%s" % (user, self.hostname, stdout))
+                "Couldn't get Session ID for {}@{}. Brokers list empty?\n{}".format(user, self.hostname, stdout))
             return
 
         broker = brokers_split[0].split()
         if len(broker) < 3:
             _LOGGER.warning(
-                "Couldn't get Session ID for %s@%s. Broker split empty?\n%s" % (user, self.hostname, broker))
+                "Couldn't get Session ID for {}@{}. Broker split empty?\n{}".format(user, self.hostname, broker))
             return
 
         session_id = broker[3]
@@ -197,10 +196,10 @@ class PSExecAPI(object):
         try:
             output = int(session_id)
         except:
-            _LOGGER.warning("Error parsing session ID for %s@%s: %s" % (user, self.hostname, str(stdout).strip()))
+            _LOGGER.warning("Error parsing session ID for {}@{}: {}".format(user, self.hostname, str(stdout).strip()))
             return
 
-        _LOGGER.info("Got session ID for %s@%s: %s" % (user, self.hostname, output))
+        _LOGGER.info("Got session ID for {}@{}: {}".format(user, self.hostname, output))
         return output
 
     @property

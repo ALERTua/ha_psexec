@@ -1,4 +1,5 @@
 """Test component setup."""
+
 from homeassistant.setup import async_setup_component
 
 from custom_components.psexec.const import DOMAIN
